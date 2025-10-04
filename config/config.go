@@ -1,21 +1,34 @@
 package config
 
-import "os"
+import (
+	"log"
+	"os"
 
-// DSN returns the PostgreSQL connection string.
-// Example: postgres://user:password@localhost:5432/reminder_db?sslmode=disable
-func DSN() string {
-	if v := os.Getenv("DATABASE_URL"); v != "" {
-		return v
+	"github.com/joho/godotenv"
+)
+
+// LoadEnv loads environment variables from a .env file
+func LoadEnv() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("No .env file found, relying on system environment variables")
 	}
-	// fallback for local dev
-	return "host=localhost user=postgres password=admin dbname=reminder_db port=5432 sslmode=disable"
 }
 
-// HTTPPort returns the server port (default 8080).
-func HTTPPort() string {
-	if v := os.Getenv("PORT"); v != "" {
-		return v
+// DSN returns the PostgreSQL connection string from the environment
+func DSN() string {
+	v := os.Getenv("DATABASE_URL")
+	if v == "" {
+		log.Fatal("DATABASE_URL is not set in environment or .env file")
 	}
-	return "8082"
+	return v
+}
+
+// HTTPPort returns the server port from environment (default 8082)
+func HTTPPort() string {
+	v := os.Getenv("PORT")
+	if v == "" {
+		return "8080"
+	}
+	return v
 }

@@ -32,7 +32,7 @@ This system allows you to create tasks, set reminders (before due or at interval
 ## 🛠 Technologies
 
 - **Language:** Go (Golang)
-- **Database:** SQLite / PostgreSQL / MySQL
+- **Database:** PostgreSQL
 - **Web Framework:** [Chi](https://github.com/go-chi/chi)
 - **ORM:** [GORM](https://gorm.io/)
 - **Logging:** Logrus
@@ -45,28 +45,28 @@ This system allows you to create tasks, set reminders (before due or at interval
 
 ```bash
 git clone https://github.com/Nehyan9895/reminder-system.git
+
 cd reminder-system
+```
 
-Install dependencies:
+2. **Install dependencies:**
 
+```bash
 go mod tidy
+```
+
+3. **Configure the database using environment variables or config file.**
 
 
-Configure the database using environment variables or config file.
+4. **Start the server:**
 
-Run migrations to create tables (if any):
-
-go run cmd/migrate/main.go
-
-
-Start the server:
-
+```bash
 go run cmd/server/main.go
-
+```
 
 The API runs at: http://localhost:8082
 
-```
+---
 
 ## 📦 API Endpoints
 

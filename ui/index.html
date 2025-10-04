@@ -84,7 +84,6 @@
   <script>
     const API = "http://localhost:8082";
 
-    // --- Helpers ---
     function formatDateTime(dt) {
       if (!dt) return "";
       let d = new Date(dt);
@@ -105,7 +104,7 @@
     function getDueAtValue() {
       let val = document.getElementById("t_due").value;
       if (!val) return null;
-      return new Date(val).toISOString(); // convert to RFC3339 for Go
+      return new Date(val).toISOString();
     }
 
     // --- Tasks ---
@@ -209,24 +208,19 @@
 
     // --- Rules ---
     async function loadRules() {
-    let res = await fetch(API + "/rules");
-    let data = await res.json();
-    let html = `<table>
+      let res = await fetch(API + "/rules");
+      let data = await res.json();
+      let html = `<table>
         <tr><th>ID</th><th>Name</th><th>Type</th><th>Time</th><th>Active</th><th>Actions</th></tr>`;
 
-    data.forEach(r => {
-        // Parse params JSON
+      data.forEach(r => {
         let paramsText = "";
         try {
-            const p = JSON.parse(r.params);
-            if (r.rule_type === "before_due") {
-                paramsText = `Send ${p.minutes_before || 5} minutes before task is due`;
-            } else if (r.rule_type === "interval") {
-                paramsText = `Repeat every ${p.interval_min || 10} minutes after due`;
-            }
-        } catch (e) {
-            paramsText = r.params; // fallback if invalid JSON
-        }
+          const p = JSON.parse(r.params);
+          if (r.rule_type === "before_due") paramsText = `Send ${p.minutes_before || 5} minutes before task is due`;
+          else if (r.rule_type === "interval") paramsText = `Repeat every ${p.interval_min || 10} minutes after due`;
+          else if (r.rule_type === "at_due") paramsText = `Send exactly at task due time`;
+        } catch (e) { paramsText = r.params; }
 
         html += `<tr>
           <td>${r.id}</td>
@@ -241,146 +235,99 @@
             <button onclick="deleteRule(${r.id})">Delete</button>
           </td>
         </tr>`;
-    });
+      });
 
-    html += "</table>";
-    document.getElementById("rules").innerHTML = html;
-}
-
+      html += "</table>";
+      document.getElementById("rules").innerHTML = html;
+    }
 
     function showCreateRule() {
-    const rtype = "before_due"; // default type
-    renderRuleForm({ name: "", rule_type: rtype, params: { minutes_before: 5 } });
-}
+      renderRuleForm({ name: "", rule_type: "before_due", params: { minutes_before: 5 } });
+    }
 
-function showEditRule(id) {
-    fetch(API + `/rules/${id}`)
+    function showEditRule(id) {
+      fetch(API + `/rules/${id}`)
         .then(r => r.json())
         .then(rule => {
-            let paramsObj;
-            try {
-                paramsObj = JSON.parse(rule.params);
-            } catch {
-                paramsObj = {};
-            }
-            renderRuleForm({ ...rule, params: paramsObj });
+          let paramsObj;
+          try { paramsObj = JSON.parse(rule.params); } catch { paramsObj = {}; }
+          renderRuleForm({ ...rule, params: paramsObj });
         });
-}
-
-// Render form dynamically based on type
-function renderRuleForm(rule) {
-    let paramsHtml = "";
-
-    if (rule.rule_type === "before_due") {
-        paramsHtml = `
-          <label>Minutes Before:
-            <input type="number" id="minutes_before" value="${rule.params.minutes_before || 5}">
-          </label>`;
-    } else if (rule.rule_type === "interval") {
-        paramsHtml = `
-          <label>Interval Minutes:
-            <input type="number" id="interval_min" value="${rule.params.interval_min || 10}">
-          </label>`;
     }
 
-    const form = `
-        <div class="form-box">
-          <h3>${rule.id ? "Edit" : "Create"} Rule</h3>
-          <label>Name: <input id="rname" value="${rule.name}"></label>
-          <label>Type:
-            <select id="rtype" onchange="onRuleTypeChange()">
-              <option value="before_due" ${rule.rule_type=="before_due"?"selected":""}>before_due</option>
-              <option value="interval" ${rule.rule_type=="interval"?"selected":""}>interval</option>
-            </select>
-          </label>
-          <div id="paramSection">${paramsHtml}</div>
-          <button onclick="${rule.id ? `updateRule(${rule.id})` : "createRule()"}">Save</button>
-        </div>`;
-    document.getElementById("rules").innerHTML = form;
-}
+    function renderRuleForm(rule) {
+      let paramsHtml = "";
+      if (rule.rule_type === "before_due") {
+        paramsHtml = `<label>Minutes Before: <input type="number" id="minutes_before" value="${rule.params.minutes_before || 5}"></label>`;
+      } else if (rule.rule_type === "interval") {
+        paramsHtml = `<label>Interval Minutes: <input type="number" id="interval_min" value="${rule.params.interval_min || 10}"></label>`;
+      } else if (rule.rule_type === "at_due") {
+        paramsHtml = `<p>Reminder will be sent exactly at task due time.</p>`;
+      }
 
-
-function onRuleTypeChange() {
-    const type = document.getElementById("rtype").value;
-
-    let paramsHtml = "";
-    if (type === "before_due") {
-        paramsHtml = `
-          <label>Minutes Before:
-            <input type="number" id="minutes_before" value="5">
-          </label>`;
-    } else if (type === "interval") {
-        paramsHtml = `
-          <label>Interval Minutes:
-            <input type="number" id="interval_min" value="10">
-          </label>`;
+      const form = `<div class="form-box">
+        <h3>${rule.id ? "Edit" : "Create"} Rule</h3>
+        <label>Name: <input id="rname" value="${rule.name}"></label>
+        <label>Type:
+          <select id="rtype" onchange="onRuleTypeChange()">
+            <option value="before_due" ${rule.rule_type=="before_due"?"selected":""}>before_due</option>
+            <option value="interval" ${rule.rule_type=="interval"?"selected":""}>interval</option>
+            <option value="at_due" ${rule.rule_type=="at_due"?"selected":""}>at_due</option>
+          </select>
+        </label>
+        <div id="paramSection">${paramsHtml}</div>
+        <button onclick="${rule.id ? `updateRule(${rule.id})` : "createRule()"}">Save</button>
+      </div>`;
+      document.getElementById("rules").innerHTML = form;
     }
 
-    // Replace just the parameter section
-    const formBox = document.querySelector(".form-box");
-    let existingParam = formBox.querySelector("#paramSection");
-    if (existingParam) existingParam.innerHTML = paramsHtml;
-    else {
+    function onRuleTypeChange() {
+      const type = document.getElementById("rtype").value;
+      let paramsHtml = "";
+      if (type === "before_due") paramsHtml = `<label>Minutes Before: <input type="number" id="minutes_before" value="5"></label>`;
+      else if (type === "interval") paramsHtml = `<label>Interval Minutes: <input type="number" id="interval_min" value="10"></label>`;
+      else if (type === "at_due") paramsHtml = `<p>Reminder will be sent exactly at task due time.</p>`;
+
+      const formBox = document.querySelector(".form-box");
+      let existingParam = formBox.querySelector("#paramSection");
+      if (existingParam) existingParam.innerHTML = paramsHtml;
+      else {
         const div = document.createElement("div");
         div.id = "paramSection";
         div.innerHTML = paramsHtml;
         formBox.insertBefore(div, formBox.querySelector("button"));
-    }
-}
-
-
-
-async function createRule() {
-    const rtype = document.getElementById("rtype").value;
-    let params = {};
-
-    if (rtype === "before_due") {
-        params.minutes_before = parseInt(document.getElementById("minutes_before").value);
-    } else if (rtype === "interval") {
-        params.interval_min = parseInt(document.getElementById("interval_min").value);
+      }
     }
 
-    let rule = {
+    async function createRule() {
+      const rtype = document.getElementById("rtype").value;
+      let params = {};
+      if (rtype === "before_due") params.minutes_before = parseInt(document.getElementById("minutes_before").value);
+      else if (rtype === "interval") params.interval_min = parseInt(document.getElementById("interval_min").value);
+      // at_due has no params
+
+      let rule = {
         name: document.getElementById("rname").value,
         rule_type: rtype,
         params: JSON.stringify(params),
         active: true
-    };
+      };
 
-    await fetch(API + "/rules", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(rule)
-    });
-
-    loadRules();
-}
-
-async function updateRule(id) {
-    const rtype = document.getElementById("rtype").value;
-    let params = {};
-
-    if (rtype === "before_due") {
-        params.minutes_before = parseInt(document.getElementById("minutes_before").value);
-    } else if (rtype === "interval") {
-        params.interval_min = parseInt(document.getElementById("interval_min").value);
+      await fetch(API + "/rules", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(rule) });
+      loadRules();
     }
 
-    let rule = {
-        name: document.getElementById("rname").value,
-        rule_type: rtype,
-        params: JSON.stringify(params),
-    };
+    async function updateRule(id) {
+      const rtype = document.getElementById("rtype").value;
+      let params = {};
+      if (rtype === "before_due") params.minutes_before = parseInt(document.getElementById("minutes_before").value);
+      else if (rtype === "interval") params.interval_min = parseInt(document.getElementById("interval_min").value);
+      // at_due has no params
 
-    await fetch(API + `/rules/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(rule)
-    });
-
-    loadRules();
-}
-
+      let rule = { name: document.getElementById("rname").value, rule_type: rtype, params: JSON.stringify(params) };
+      await fetch(API + `/rules/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(rule) });
+      loadRules();
+    }
 
     async function activateRule(id) { await fetch(API + `/rules/${id}/activate`, { method: "POST" }); loadRules(); }
     async function deactivateRule(id) { await fetch(API + `/rules/${id}/deactivate`, { method: "POST" }); loadRules(); }
@@ -391,9 +338,7 @@ async function updateRule(id) {
       let res = await fetch(API + "/audit");
       let data = await res.json();
       let html = "<ul>";
-      data.forEach(a => {
-        html += `<li><b>${formatDateTime(a.created_at)}</b> — [${a.event_type}] ${a.details}</li>`;
-      });
+      data.forEach(a => html += `<li><b>${formatDateTime(a.created_at)}</b> — [${a.event_type}] ${a.details}</li>`);
       html += "</ul>";
       document.getElementById("audit").innerHTML = html;
     }

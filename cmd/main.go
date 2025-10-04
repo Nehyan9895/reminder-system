@@ -16,12 +16,16 @@ import (
 	"github.com/go-chi/chi/v5"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 func main() {
 	// DB
+	config.LoadEnv()
 	dsn := config.DSN()
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
 	if err != nil {
 		log.Fatalf("open db: %v", err)
 	}
@@ -56,7 +60,7 @@ func main() {
 
 	// Scheduler
 	ctx, cancel := context.WithCancel(context.Background())
-	go reminderSvc.StartScheduler(ctx, 30*time.Second)
+	go reminderSvc.StartScheduler(ctx, 60*time.Second)
 
 	// Serve UI static files
 	r.Handle("/*", http.FileServer(http.Dir("./ui")))
