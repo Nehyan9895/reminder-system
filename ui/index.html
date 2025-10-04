@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Reminder System</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f8f9fa;
+      color: #333;
+    }
+    header {
+      background: #4a90e2;
+      color: #fff;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+    h1 { margin: 0; font-size: 28px; }
+    main { max-width: 1000px; margin: 30px auto; padding: 20px; }
+    section {
+      background: #fff;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 25px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+    h2 { margin-top: 0; color: #444; font-size: 22px; border-bottom: 2px solid #eee; padding-bottom: 8px; }
+    button {
+      background: #4a90e2;
+      border: none;
+      color: #fff;
+      padding: 8px 14px;
+      margin: 5px 3px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: 0.2s;
+    }
+    button:hover { background: #357ab7; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; }
+    th { background: #f1f4f8; font-weight: 600; }
+    tr:hover { background: #fafafa; }
+    ul { list-style: none; padding: 0; }
+    ul li { background: #f1f4f8; margin: 6px 0; padding: 10px; border-radius: 6px; font-size: 14px; }
+    .form-box { margin-top: 15px; padding: 15px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 8px; }
+    .form-box label { display: block; margin-bottom: 10px; font-weight: 500; }
+    .form-box input, .form-box select { padding: 8px; width: 100%; border-radius: 5px; border: 1px solid #ccc; margin-top: 4px; }
+    .form-box button { margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>📅 Reminder System</h1>
+  </header>
+
+  <main>
+    <!-- Tasks -->
+    <section>
+      <h2>Tasks</h2>
+      <button onclick="loadTasks()">Load Tasks</button>
+      <button onclick="showCreateTask()">+ Create Task</button>
+      <div id="tasks"></div>
+    </section>
+
+    <!-- Rules -->
+    <section>
+      <h2>Rules</h2>
+      <button onclick="loadRules()">Load Rules</button>
+      <button onclick="showCreateRule()">+ Create Rule</button>
+      <div id="rules"></div>
+    </section>
+
+    <!-- Audit -->
+    <section>
+      <h2>Audit Log</h2>
+      <button onclick="loadAudit()">Load Audit</button>
+      <div id="audit"></div>
+    </section>
+  </main>
+
+  <script>
+    const API = "http://localhost:8082";
+
+    // --- Helpers ---
+    function formatDateTime(dt) {
+      if (!dt) return "";
+      let d = new Date(dt);
+      return d.toLocaleString("en-US", { year:"numeric", month:"short", day:"numeric", hour:"2-digit", minute:"2-digit" });
+    }
+
+    function formatForInput(dt) {
+      if (!dt) return "";
+      let d = new Date(dt);
+      let yyyy = d.getFullYear();
+      let mm = String(d.getMonth()+1).padStart(2,'0');
+      let dd = String(d.getDate()).padStart(2,'0');
+      let hh = String(d.getHours()).padStart(2,'0');
+      let min = String(d.getMinutes()).padStart(2,'0');
+      return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+    }
+
+    function getDueAtValue() {
+      let val = document.getElementById("t_due").value;
+      if (!val) return null;
+      return new Date(val).toISOString(); // convert to RFC3339 for Go
+    }
+
+    // --- Tasks ---
+    async function loadTasks() {
+      let res = await fetch(API + "/tasks");
+      let data = await res.json();
+      let html = `<table>
+        <tr><th>ID</th><th>Title</th><th>Description</th><th>Due At</th><th>Status</th><th>Actions</th></tr>`;
+      data.forEach(t => {
+        html += `<tr>
+          <td>${t.id}</td>
+          <td>${t.title}</td>
+          <td>${t.description}</td>
+          <td>${formatDateTime(t.due_at)}</td>
+          <td>${t.status}</td>
+          <td>
+            <button onclick="showEditTask(${t.id})">Edit</button>
+            <button onclick="deleteTask(${t.id})">Delete</button>
+          </td>
+        </tr>`;
+      });
+      html += "</table>";
+      document.getElementById("tasks").innerHTML = html;
+    }
+
+    function showCreateTask() {
+      let now = new Date().toISOString().slice(0,16);
+      let form = `
+        <div class="form-box">
+          <h3>Create Task</h3>
+          <label>Title: <input id="t_title"></label>
+          <label>Description: <input id="t_desc"></label>
+          <label>Due At: <input type="datetime-local" id="t_due" value="${now}"></label>
+          <label>Status:
+            <select id="t_status">
+              <option value="pending">pending</option>
+              <option value="done">done</option>
+            </select>
+          </label>
+          <button onclick="createTask()">Save</button>
+        </div>`;
+      document.getElementById("tasks").innerHTML = form;
+    }
+
+    async function createTask() {
+      let task = {
+        title: document.getElementById("t_title").value,
+        description: document.getElementById("t_desc").value,
+        due_at: getDueAtValue(),
+        status: document.getElementById("t_status").value
+      };
+      await fetch(API + "/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(task)
+      });
+      loadTasks();
+    }
+
+    function showEditTask(id) {
+      fetch(API + `/tasks/${id}`)
+        .then(r => r.json())
+        .then(task => {
+          let form = `
+            <div class="form-box">
+              <h3>Edit Task</h3>
+              <label>Title: <input id="t_title" value="${task.title}"></label>
+              <label>Description: <input id="t_desc" value="${task.description}"></label>
+              <label>Due At: <input type="datetime-local" id="t_due" value="${formatForInput(task.due_at)}"></label>
+              <label>Status:
+                <select id="t_status">
+                  <option value="pending" ${task.status=="pending"?"selected":""}>pending</option>
+                  <option value="done" ${task.status=="done"?"selected":""}>done</option>
+                </select>
+              </label>
+              <button onclick="updateTask(${task.id})">Save</button>
+            </div>`;
+          document.getElementById("tasks").innerHTML = form;
+        });
+    }
+
+    async function updateTask(id) {
+      let task = {
+        title: document.getElementById("t_title").value,
+        description: document.getElementById("t_desc").value,
+        due_at: getDueAtValue(),
+        status: document.getElementById("t_status").value
+      };
+      await fetch(API + `/tasks/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(task)
+      });
+      loadTasks();
+    }
+
+    async function deleteTask(id) {
+      await fetch(API + `/tasks/${id}`, { method: "DELETE" });
+      loadTasks();
+    }
+
+    // --- Rules ---
+    async function loadRules() {
+    let res = await fetch(API + "/rules");
+    let data = await res.json();
+    let html = `<table>
+        <tr><th>ID</th><th>Name</th><th>Type</th><th>Time</th><th>Active</th><th>Actions</th></tr>`;
+
+    data.forEach(r => {
+        // Parse params JSON
+        let paramsText = "";
+        try {
+            const p = JSON.parse(r.params);
+            if (r.rule_type === "before_due") {
+                paramsText = `Send ${p.minutes_before || 5} minutes before task is due`;
+            } else if (r.rule_type === "interval") {
+                paramsText = `Repeat every ${p.interval_min || 10} minutes`;
+            }
+        } catch (e) {
+            paramsText = r.params; // fallback if invalid JSON
+        }
+
+        html += `<tr>
+          <td>${r.id}</td>
+          <td>${r.name}</td>
+          <td>${r.rule_type}</td>
+          <td>${paramsText}</td>
+          <td>${r.active}</td>
+          <td>
+            <button onclick="activateRule(${r.id})">Activate</button>
+            <button onclick="deactivateRule(${r.id})">Deactivate</button>
+            <button onclick="showEditRule(${r.id})">Edit</button>
+            <button onclick="deleteRule(${r.id})">Delete</button>
+          </td>
+        </tr>`;
+    });
+
+    html += "</table>";
+    document.getElementById("rules").innerHTML = html;
+}
+
+
+    function showCreateRule() {
+    const rtype = "before_due"; // default type
+    renderRuleForm({ name: "", rule_type: rtype, params: { minutes_before: 5 } });
+}
+
+function showEditRule(id) {
+    fetch(API + `/rules/${id}`)
+        .then(r => r.json())
+        .then(rule => {
+            let paramsObj;
+            try {
+                paramsObj = JSON.parse(rule.params);
+            } catch {
+                paramsObj = {};
+            }
+            renderRuleForm({ ...rule, params: paramsObj });
+        });
+}
+
+// Render form dynamically based on type
+function renderRuleForm(rule) {
+    let paramsHtml = "";
+
+    if (rule.rule_type === "before_due") {
+        paramsHtml = `
+          <label>Minutes Before:
+            <input type="number" id="minutes_before" value="${rule.params.minutes_before || 5}">
+          </label>`;
+    } else if (rule.rule_type === "interval") {
+        paramsHtml = `
+          <label>Interval Minutes:
+            <input type="number" id="interval_min" value="${rule.params.interval_min || 10}">
+          </label>`;
+    }
+
+    const form = `
+        <div class="form-box">
+          <h3>${rule.id ? "Edit" : "Create"} Rule</h3>
+          <label>Name: <input id="rname" value="${rule.name}"></label>
+          <label>Type:
+            <select id="rtype" onchange="onRuleTypeChange()">
+              <option value="before_due" ${rule.rule_type=="before_due"?"selected":""}>before_due</option>
+              <option value="interval" ${rule.rule_type=="interval"?"selected":""}>interval</option>
+            </select>
+          </label>
+          <div id="paramSection">${paramsHtml}</div>
+          <button onclick="${rule.id ? `updateRule(${rule.id})` : "createRule()"}">Save</button>
+        </div>`;
+    document.getElementById("rules").innerHTML = form;
+}
+
+
+function onRuleTypeChange() {
+    const type = document.getElementById("rtype").value;
+
+    let paramsHtml = "";
+    if (type === "before_due") {
+        paramsHtml = `
+          <label>Minutes Before:
+            <input type="number" id="minutes_before" value="5">
+          </label>`;
+    } else if (type === "interval") {
+        paramsHtml = `
+          <label>Interval Minutes:
+            <input type="number" id="interval_min" value="10">
+          </label>`;
+    }
+
+    // Replace just the parameter section
+    const formBox = document.querySelector(".form-box");
+    let existingParam = formBox.querySelector("#paramSection");
+    if (existingParam) existingParam.innerHTML = paramsHtml;
+    else {
+        const div = document.createElement("div");
+        div.id = "paramSection";
+        div.innerHTML = paramsHtml;
+        formBox.insertBefore(div, formBox.querySelector("button"));
+    }
+}
+
+
+
+async function createRule() {
+    const rtype = document.getElementById("rtype").value;
+    let params = {};
+
+    if (rtype === "before_due") {
+        params.minutes_before = parseInt(document.getElementById("minutes_before").value);
+    } else if (rtype === "interval") {
+        params.interval_min = parseInt(document.getElementById("interval_min").value);
+    }
+
+    let rule = {
+        name: document.getElementById("rname").value,
+        rule_type: rtype,
+        params: JSON.stringify(params),
+        active: true
+    };
+
+    await fetch(API + "/rules", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(rule)
+    });
+
+    loadRules();
+}
+
+async function updateRule(id) {
+    const rtype = document.getElementById("rtype").value;
+    let params = {};
+
+    if (rtype === "before_due") {
+        params.minutes_before = parseInt(document.getElementById("minutes_before").value);
+    } else if (rtype === "interval") {
+        params.interval_min = parseInt(document.getElementById("interval_min").value);
+    }
+
+    let rule = {
+        name: document.getElementById("rname").value,
+        rule_type: rtype,
+        params: JSON.stringify(params),
+    };
+
+    await fetch(API + `/rules/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(rule)
+    });
+
+    loadRules();
+}
+
+
+    async function activateRule(id) { await fetch(API + `/rules/${id}/activate`, { method: "POST" }); loadRules(); }
+    async function deactivateRule(id) { await fetch(API + `/rules/${id}/deactivate`, { method: "POST" }); loadRules(); }
+    async function deleteRule(id) { await fetch(API + `/rules/${id}`, { method: "DELETE" }); loadRules(); }
+
+    // --- Audit ---
+    async function loadAudit() {
+      let res = await fetch(API + "/audit");
+      let data = await res.json();
+      let html = "<ul>";
+      data.forEach(a => {
+        html += `<li><b>${formatDateTime(a.created_at)}</b> — [${a.event_type}] ${a.details}</li>`;
+      });
+      html += "</ul>";
+      document.getElementById("audit").innerHTML = html;
+    }
+  </script>
+</body>
+</html>
