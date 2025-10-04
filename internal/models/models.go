@@ -18,7 +18,7 @@ type ReminderRule struct {
 	ID        uint       `gorm:"primaryKey" json:"id"`
 	Name      string     `json:"name"`
 	Active    bool       `json:"active"`
-	RuleType  string     `json:"rule_type"`               // "before_due", "interval"
+	RuleType  string     `json:"rule_type"`               // "before_due", "interval","at_due"
 	Params    string     `gorm:"type:TEXT" json:"params"` // JSON string
 	LastRunAt *time.Time `json:"last_run_at"`
 	CreatedAt time.Time  `json:"created_at"`

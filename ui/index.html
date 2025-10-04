@@ -71,6 +71,7 @@
       <button onclick="loadRules()">Load Rules</button>
       <button onclick="showCreateRule()">+ Create Rule</button>
       <div id="rules"></div>
+      <div id="ruleAlert" style="display:none; padding: 12px; margin: 10px 0; border-radius: 6px; font-weight: 500;"></div>
     </section>
 
     <!-- Audit -->
@@ -207,39 +208,67 @@
     }
 
     // --- Rules ---
-    async function loadRules() {
-      let res = await fetch(API + "/rules");
-      let data = await res.json();
-      let html = `<table>
-        <tr><th>ID</th><th>Name</th><th>Type</th><th>Time</th><th>Active</th><th>Actions</th></tr>`;
+async function loadRules() {
+  let res = await fetch(API + "/rules");
+  let data = await res.json();
 
-      data.forEach(r => {
-        let paramsText = "";
-        try {
-          const p = JSON.parse(r.params);
-          if (r.rule_type === "before_due") paramsText = `Send ${p.minutes_before || 5} minutes before task is due`;
-          else if (r.rule_type === "interval") paramsText = `Repeat every ${p.interval_min || 10} minutes after due`;
-          else if (r.rule_type === "at_due") paramsText = `Send exactly at task due time`;
-        } catch (e) { paramsText = r.params; }
+  let html = `<table>
+    <tr><th>ID</th><th>Name</th><th>Type</th><th>Time</th><th>Active</th><th>Actions</th></tr>`;
 
-        html += `<tr>
-          <td>${r.id}</td>
-          <td>${r.name}</td>
-          <td>${r.rule_type}</td>
-          <td>${paramsText}</td>
-          <td>${r.active}</td>
-          <td>
-            <button onclick="activateRule(${r.id})">Activate</button>
-            <button onclick="deactivateRule(${r.id})">Deactivate</button>
-            <button onclick="showEditRule(${r.id})">Edit</button>
-            <button onclick="deleteRule(${r.id})">Delete</button>
-          </td>
-        </tr>`;
-      });
-
-      html += "</table>";
-      document.getElementById("rules").innerHTML = html;
+  data.forEach(r => {
+    // 🧠 Make rule_type human-readable
+    let displayType = "";
+    switch (r.rule_type) {
+      case "before_due":
+        displayType = "Before Due";
+        break;
+      case "interval":
+        displayType = "Interval";
+        break;
+      case "at_due":
+        displayType = "At Due";
+        break;
+      default:
+        displayType = r.rule_type;
     }
+
+    // 🕒 Format the params/description text
+    let paramsText = "";
+    if (r.rule_type === "at_due") {
+      paramsText = "Send exactly at task due time";
+    } else {
+      try {
+        const p = JSON.parse(r.params || "{}");
+        if (r.rule_type === "before_due")
+          paramsText = `Send ${p.minutes_before || 5} minutes before task is due`;
+        else if (r.rule_type === "interval")
+          paramsText = `Repeat every ${p.interval_min || 10} minutes after due`;
+      } catch (e) {
+        paramsText = r.params || "";
+      }
+    }
+
+    // 🧱 Build table row
+    html += `<tr>
+      <td>${r.id}</td>
+      <td>${r.name}</td>
+      <td>${displayType}</td>
+      <td>${paramsText}</td>
+      <td>${r.active}</td>
+      <td>
+        <button onclick="activateRule(${r.id})">Activate</button>
+        <button onclick="deactivateRule(${r.id})">Deactivate</button>
+        <button onclick="showEditRule(${r.id})">Edit</button>
+        <button onclick="deleteRule(${r.id})">Delete</button>
+      </td>
+    </tr>`;
+  });
+
+  html += "</table>";
+  document.getElementById("rules").innerHTML = html;
+}
+
+
 
     function showCreateRule() {
       renderRuleForm({ name: "", rule_type: "before_due", params: { minutes_before: 5 } });
@@ -281,6 +310,26 @@
       document.getElementById("rules").innerHTML = form;
     }
 
+    function showRuleAlert(message, type = "error") {
+  const alertDiv = document.getElementById("ruleAlert");
+  alertDiv.style.display = "block";
+  alertDiv.innerText = message;
+
+  if (type === "error") {
+    alertDiv.style.backgroundColor = "#f8d7da";
+    alertDiv.style.color = "#842029";
+    alertDiv.style.border = "1px solid #f5c2c7";
+  } else if (type === "success") {
+    alertDiv.style.backgroundColor = "#d1e7dd";
+    alertDiv.style.color = "#0f5132";
+    alertDiv.style.border = "1px solid #badbcc";
+  }
+
+  // Auto hide after 4 seconds
+  setTimeout(() => { alertDiv.style.display = "none"; }, 4000);
+}
+
+
     function onRuleTypeChange() {
       const type = document.getElementById("rtype").value;
       let paramsHtml = "";
@@ -300,34 +349,53 @@
     }
 
     async function createRule() {
-      const rtype = document.getElementById("rtype").value;
-      let params = {};
-      if (rtype === "before_due") params.minutes_before = parseInt(document.getElementById("minutes_before").value);
-      else if (rtype === "interval") params.interval_min = parseInt(document.getElementById("interval_min").value);
-      // at_due has no params
+  const rtype = document.getElementById("rtype").value;
+  let params = {};
+  if (rtype === "before_due") params.minutes_before = parseInt(document.getElementById("minutes_before").value);
+  else if (rtype === "interval") params.interval_min = parseInt(document.getElementById("interval_min").value);
 
-      let rule = {
-        name: document.getElementById("rname").value,
-        rule_type: rtype,
-        params: JSON.stringify(params),
-        active: true
-      };
+  let rule = {
+    name: document.getElementById("rname").value,
+    rule_type: rtype,
+    params: JSON.stringify(params),
+    active: true
+  };
 
-      await fetch(API + "/rules", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(rule) });
-      loadRules();
+  try {
+    const res = await fetch(API + "/rules", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(rule) });
+    if (!res.ok) {
+      const error = await res.text();
+      showRuleAlert(error, "error");
+      return;
     }
-
+    showRuleAlert("Rule created successfully!", "success");
+    loadRules();
+  } catch (err) {
+    showRuleAlert("Network error. Please try again.", "error");
+  }
+}
     async function updateRule(id) {
-      const rtype = document.getElementById("rtype").value;
-      let params = {};
-      if (rtype === "before_due") params.minutes_before = parseInt(document.getElementById("minutes_before").value);
-      else if (rtype === "interval") params.interval_min = parseInt(document.getElementById("interval_min").value);
-      // at_due has no params
+  const rtype = document.getElementById("rtype").value;
+  let params = {};
+  if (rtype === "before_due") params.minutes_before = parseInt(document.getElementById("minutes_before").value);
+  else if (rtype === "interval") params.interval_min = parseInt(document.getElementById("interval_min").value);
 
-      let rule = { name: document.getElementById("rname").value, rule_type: rtype, params: JSON.stringify(params) };
-      await fetch(API + `/rules/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(rule) });
-      loadRules();
+  let rule = { name: document.getElementById("rname").value, rule_type: rtype, params: JSON.stringify(params) };
+
+  try {
+    const res = await fetch(API + `/rules/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(rule) });
+    if (!res.ok) {
+      const error = await res.text();
+      showRuleAlert(error, "error");
+      return;
     }
+    showRuleAlert("Rule updated successfully!", "success");
+    loadRules();
+  } catch (err) {
+    showRuleAlert("Network error. Please try again.", "error");
+  }
+}
+
 
     async function activateRule(id) { await fetch(API + `/rules/${id}/activate`, { method: "POST" }); loadRules(); }
     async function deactivateRule(id) { await fetch(API + `/rules/${id}/deactivate`, { method: "POST" }); loadRules(); }

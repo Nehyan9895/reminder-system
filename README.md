@@ -61,11 +61,11 @@ go mod tidy
 4. **Start the server:**
 
 ```bash
-go run cmd/server/main.go
+ go run ./cmd
 ```
 
-The API runs at: http://localhost:8082
-
+The API runs at: http://localhost:8080 at default
+The simple UI is available at: http://localhost:8080/
 ---
 
 ## 📦 API Endpoints
@@ -112,6 +112,38 @@ The API runs at: http://localhost:8082
 - Each reminder execution is logged in the audit trail
 
 ---
+
+## 🛡️ Validation Rules for Reminder Rules
+
+**To prevent duplicate or conflicting reminders, the system enforces the following constraints:**
+
+1. **at_due Rule**
+    
+    - Only one at_due rule is allowed in the system.
+    - Attempting to create another at_due rule will return an error.
+
+2. **before_due Rule**
+
+    - Cannot create a before_due rule with the same minutes_before value as an existing before_due rule.
+    - Ensures that reminders scheduled for the same time before a task do not conflict.
+
+3. **interval Rule**
+
+    - Cannot create an interval rule with the same interval_min value as an existing interval rule.
+    - Prevents duplicate interval reminders for the same task timing.
+
+4. **Update Behavior**
+
+    - The same validations are applied when updating a rule.
+    - The rule being updated is ignored during conflict checks, so it can keep its own value if unchanged.
+
+**Example Error Response:**
+
+```bash
+{
+  "error": "before_due rule with 5 minutes already exists"
+}
+```
 
 ## 📋 Sample Tasks
 
