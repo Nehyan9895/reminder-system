@@ -2,20 +2,23 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/Nehyan9895/reminder-system/internal/models"
+	"github.com/Nehyan9895/reminder-system/internal/repository"
 	"github.com/Nehyan9895/reminder-system/internal/service"
 	"github.com/go-chi/chi/v5"
 )
 
 type TaskHandler struct {
-	svc *service.TaskService
+	svc  *service.TaskService
+	Repo *repository.GormRepo
 }
 
-func NewTaskHandler(svc *service.TaskService) *TaskHandler {
-	return &TaskHandler{svc: svc}
+func NewTaskHandler(svc *service.TaskService, repo *repository.GormRepo) *TaskHandler {
+	return &TaskHandler{svc: svc, Repo: repo}
 }
 
 // Register Chi routes
@@ -39,6 +42,10 @@ func (h *TaskHandler) Create(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	// Write audit log
+	_ = h.Repo.WriteAudit("task.create", task.Title)
+
 	json.NewEncoder(w).Encode(task)
 }
 
@@ -73,14 +80,27 @@ func (h *TaskHandler) Update(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	// Write audit log
+	statusMsg := ""
+	if task.Status != "" {
+		statusMsg = fmt.Sprintf("status updated to %s", task.Status)
+	}
+	_ = h.Repo.WriteAudit("task.update", fmt.Sprintf("%s (%s)", task.Title, statusMsg))
+
 	json.NewEncoder(w).Encode(task)
 }
 
 func (h *TaskHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	id, _ := strconv.Atoi(chi.URLParam(r, "id"))
+	task, _ := h.svc.Get(uint(id)) // optional: get task title before deletion
 	if err := h.svc.Delete(uint(id)); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	// Write audit log
+	_ = h.Repo.WriteAudit("task.delete", task.Title)
+
 	w.WriteHeader(http.StatusNoContent)
 }

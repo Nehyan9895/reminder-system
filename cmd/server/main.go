@@ -45,7 +45,7 @@ func main() {
 	// Handlers
 	reminderHandler := handler.NewReminderHandler(repo)
 	auditHandler := handler.NewAuditHandler(repo)
-	taskHandler := handler.NewTaskHandler(taskSvc)
+	taskHandler := handler.NewTaskHandler(taskSvc, repo)
 
 	// Router
 	r := chi.NewRouter()
