@@ -89,7 +89,6 @@ func (h *ReminderHandler) CreateRule(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// --- Persist ---
 	if err := h.Repo.CreateRule(&in); err != nil {
 		http.Error(w, "db error: "+err.Error(), http.StatusInternalServerError)
 		return

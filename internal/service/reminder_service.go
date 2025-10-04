@@ -61,8 +61,6 @@ func (s *ReminderService) applyBeforeDue(rr *models.ReminderRule) {
 
 	now := time.Now()
 
-	// Calculate the reminder window
-	// We want tasks where due_at is within the next `MinutesBefore` minutes
 	windowStart := now
 	windowEnd := now.Add(time.Duration(p.MinutesBefore) * time.Minute)
 
