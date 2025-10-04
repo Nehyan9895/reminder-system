@@ -66,6 +66,7 @@ go mod tidy
 
 - The API runs at: http://localhost:8080 at default
 - The simple UI is available at: http://localhost:8080/
+- Hosted system available at https://reminder-system-4v3s.onrender.com/
 ---
 
 ## 📦 API Endpoints
