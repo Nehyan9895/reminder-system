@@ -64,8 +64,8 @@ go mod tidy
  go run ./cmd
 ```
 
-The API runs at: http://localhost:8080 at default
-The simple UI is available at: http://localhost:8080/
+- The API runs at: http://localhost:8080 at default
+- The simple UI is available at: http://localhost:8080/
 ---
 
 ## 📦 API Endpoints

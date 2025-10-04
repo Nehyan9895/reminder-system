@@ -1,6 +1,6 @@
 module github.com/Nehyan9895/reminder-system
 
-go 1.25.1
+go 1.25.0
 
 require gorm.io/gorm v1.31.0
 
