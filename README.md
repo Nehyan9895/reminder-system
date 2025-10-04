@@ -135,9 +135,11 @@ Pre-seeded tasks for demonstration:
 
 **Audit Log:**
 
-- 2025-10-04 12:12:27 — [reminder.trigger] {"rule_id":1,"rule_name":"every 2 min","task_id":7,"task_title":"Submit assignment"}
-- 2025-10-04 12:12:27 — [reminder.trigger] {"rule_id":1,"rule_name":"every 2 min","task_id":8,"task_title":"Daily workout"}
-- 2025-10-04 12:10:00 — [rule.create] New rule "every 2 min" created
+- Oct 4, 2025, 05:54 PM — [reminder.trigger] Reminder triggered [Rule #2: every 2 min] -> [Task #4: Call supplier]
+- Oct 4, 2025, 05:54 PM — [reminder.trigger] Reminder triggered [Rule #2: every 2 min] -> [Task #2: Submit assignment]
+- Oct 4, 2025, 05:54 PM — [reminder.trigger] Reminder triggered [Rule #2: every 2 min] -> [Task #1: Pay electricity bill]
+- Oct 4, 2025, 05:42 PM — [reminder.trigger] Reminder triggered [Rule #2: every 2 min] -> [Task #4: Call supplier]
+
 
 ✅ The console output shows reminders for tasks and their respective audit log entries.
 
