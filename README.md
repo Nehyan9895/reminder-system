@@ -1,1 +1,143 @@
-# reminder-system
+# 📅 Dynamic Reminder System
+
+[![Go](https://img.shields.io/badge/Go-1.21-blue?logo=go)](https://golang.org/) 
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
+A **Dynamic Reminder System** built in **Go (Golang)** with configurable rules, background scheduling, and an audit trail.  
+This system allows you to create tasks, set reminders (before due or at intervals), and logs all activity for auditing purposes.
+
+---
+
+## 🚀 Features
+
+- **Task Management**
+  - Create, update, delete, and list tasks
+  - Track due dates and status (pending/done)
+- **Reminder Rules**
+  - **Before Due:** Remind X minutes before task is due
+  - **Interval:** Repeat reminders every Y minutes until task is done
+  - Activate/deactivate rules dynamically
+- **Scheduler**
+  - Runs periodically (every minute)
+  - Applies active reminder rules to tasks
+  - Simulates sending reminders via console logs
+- **Audit Trail**
+  - Logs all rule changes (create/update/delete/activate/deactivate)
+  - Logs every triggered reminder with rule and task details
+- **Sample Data**
+  - Pre-seeded tasks for demonstration
+
+---
+
+## 🛠 Technologies
+
+- **Language:** Go (Golang)
+- **Database:** SQLite / PostgreSQL / MySQL
+- **Web Framework:** [Chi](https://github.com/go-chi/chi)
+- **ORM:** [GORM](https://gorm.io/)
+- **Logging:** Logrus
+
+---
+
+## ⚙️ Setup
+
+1. **Clone the repository:**
+
+```bash
+git clone https://github.com/Nehyan9895/reminder-system.git
+cd reminder-system
+
+Install dependencies:
+
+go mod tidy
+
+
+Configure the database using environment variables or config file.
+
+Run migrations to create tables (if any):
+
+go run cmd/migrate/main.go
+
+
+Start the server:
+
+go run cmd/server/main.go
+
+
+The API runs at: http://localhost:8082
+
+📦 API Endpoints
+
+Tasks
+
+| Method | Endpoint      | Description       |
+| ------ | ------------- | ----------------- |
+| GET    | `/tasks`      | List all tasks    |
+| POST   | `/tasks`      | Create a new task |
+| GET    | `/tasks/{id}` | Get task by ID    |
+| PUT    | `/tasks/{id}` | Update task by ID |
+| DELETE | `/tasks/{id}` | Delete task       |
+
+
+Reminder Rules
+
+| Method | Endpoint                 | Description       |
+| ------ | ------------------------ | ----------------- |
+| GET    | `/rules`                 | List all rules    |
+| POST   | `/rules`                 | Create a new rule |
+| GET    | `/rules/{id}`            | Get rule by ID    |
+| PUT    | `/rules/{id}`            | Update rule by ID |
+| DELETE | `/rules/{id}`            | Delete rule by ID |
+| POST   | `/rules/{id}/activate`   | Activate a rule   |
+| POST   | `/rules/{id}/deactivate` | Deactivate a rule |
+
+Audit
+
+| Method | Endpoint | Description                |
+| ------ | -------- | -------------------------- |
+| GET    | `/audit` | Retrieve audit logs/events |
+
+
+🕒 Scheduler Logic
+
+Before Due: triggers a reminder X minutes before the task’s due date
+
+Interval: triggers a reminder every Y minutes until task is marked as done
+
+Scheduler runs every minute by default (configurable for demo purposes)
+
+Each reminder execution is logged in the audit trail
+
+📋 Sample Tasks
+
+Pre-seeded tasks for demonstration:
+
+1. Submit assignment
+2. Daily workout
+3. Project meeting
+4. Pay bills
+5. Grocery shopping
+
+🔧 Usage
+
+Load tasks via /tasks endpoint or UI.
+
+Create reminder rules (before_due or interval).
+
+Activate rules and let the scheduler trigger reminders.
+
+Check the audit logs for every reminder executed and rule change.
+
+.
+
+📄 License
+
+MIT License © 2025 Muhammed Nehyan
+
+💡 Notes
+
+Reminders are simulated via console logs (no actual emails).
+
+Scheduler is idempotent, ensuring reminders are not duplicated for the same task in the same time window.
+
+Easily extendable for email/SMS notifications in the future.

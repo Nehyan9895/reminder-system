@@ -222,7 +222,7 @@
             if (r.rule_type === "before_due") {
                 paramsText = `Send ${p.minutes_before || 5} minutes before task is due`;
             } else if (r.rule_type === "interval") {
-                paramsText = `Repeat every ${p.interval_min || 10} minutes`;
+                paramsText = `Repeat every ${p.interval_min || 10} minutes after due`;
             }
         } catch (e) {
             paramsText = r.params; // fallback if invalid JSON
