@@ -81,7 +81,7 @@ The API runs at: http://localhost:8082
 | DELETE | `/tasks/{id}` | Delete task       |
 
 
-Reminder Rules
+**Reminder Rules**
 
 | Method | Endpoint                 | Description       |
 | ------ | ------------------------ | ----------------- |
@@ -93,24 +93,27 @@ Reminder Rules
 | POST   | `/rules/{id}/activate`   | Activate a rule   |
 | POST   | `/rules/{id}/deactivate` | Deactivate a rule |
 
-Audit
+**Audit**
 
 | Method | Endpoint | Description                |
 | ------ | -------- | -------------------------- |
 | GET    | `/audit` | Retrieve audit logs/events |
+ 
+---
 
+## 🕒 Scheduler Logic
 
-🕒 Scheduler Logic
+- Before Due: triggers a reminder X minutes before the task’s due date
 
-Before Due: triggers a reminder X minutes before the task’s due date
+- Interval: triggers a reminder every Y minutes until task is marked as done
 
-Interval: triggers a reminder every Y minutes until task is marked as done
+- Scheduler runs every minute by default (configurable for demo purposes)
 
-Scheduler runs every minute by default (configurable for demo purposes)
+- Each reminder execution is logged in the audit trail
 
-Each reminder execution is logged in the audit trail
+---
 
-📋 Sample Tasks
+## 📋 Sample Tasks
 
 Pre-seeded tasks for demonstration:
 
@@ -120,41 +123,41 @@ Pre-seeded tasks for demonstration:
 4. Pay bills
 5. Grocery shopping
 
-💻 Demo / Console Output
+---
 
-Example of scheduler logs and audit entries:
+## 💻 Demo / Console Output
 
-2025-10-04T12:12:27+05:30 [INFO] [scheduler] run pass
-2025-10-04T12:12:27+05:30 [INFO] IntervalReminder(rule:every 2 min) -> Task:7 Submit assignment (past due: 2025-10-03T22:39:37+05:30)
-2025-10-04T12:12:27+05:30 [INFO] IntervalReminder(rule:every 2 min) -> Task:8 Daily workout (past due: 2025-10-03T23:22:00+05:30)
+**Example of scheduler logs and audit entries:**
 
-Audit Log:
+- 2025-10-04T12:12:27+05:30 [INFO] [scheduler] run pass
+- 2025-10-04T12:12:27+05:30 [INFO] IntervalReminder(rule:every 2 min) -> Task:7 Submit assignment (past due: 2025-10-03T22:39:37+05:30)
+- 2025-10-04T12:12:27+05:30 [INFO] IntervalReminder(rule:every 2 min) -> Task:8 Daily workout (past due: 2025-10-03T23:22:00+05:30)
+
+**Audit Log:**
+
 - 2025-10-04 12:12:27 — [reminder.trigger] {"rule_id":1,"rule_name":"every 2 min","task_id":7,"task_title":"Submit assignment"}
 - 2025-10-04 12:12:27 — [reminder.trigger] {"rule_id":1,"rule_name":"every 2 min","task_id":8,"task_title":"Daily workout"}
 - 2025-10-04 12:10:00 — [rule.create] New rule "every 2 min" created
 
 ✅ The console output shows reminders for tasks and their respective audit log entries.
 
-🔧 Usage
+## 🔧 Usage
 
-Load tasks via /tasks endpoint or UI.
+- Load tasks via /tasks endpoint or UI.
 
-Create reminder rules (before_due or interval).
+- Create reminder rules (before_due or interval).
 
-Activate rules and let the scheduler trigger reminders.
+- Activate rules and let the scheduler trigger reminders.
 
-Check the audit logs for every reminder executed and rule change.
+- Check the audit logs for every reminder executed and rule change.
 
-.
+---
 
-📄 License
 
-MIT License © 2025 Muhammed Nehyan
+## 💡 Notes
 
-💡 Notes
+- Reminders are simulated via console logs (no actual emails).
 
-Reminders are simulated via console logs (no actual emails).
+- Scheduler is idempotent, ensuring reminders are not duplicated for the same task in the same time window.
 
-Scheduler is idempotent, ensuring reminders are not duplicated for the same task in the same time window.
-
-Easily extendable for email/SMS notifications in the future.
+- Easily extendable for email/SMS notifications in the future.
