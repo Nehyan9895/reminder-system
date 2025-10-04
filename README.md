@@ -66,9 +66,11 @@ go run cmd/server/main.go
 
 The API runs at: http://localhost:8082
 
-📦 API Endpoints
+```
 
-Tasks
+## 📦 API Endpoints
+
+**Tasks**
 
 | Method | Endpoint      | Description       |
 | ------ | ------------- | ----------------- |
