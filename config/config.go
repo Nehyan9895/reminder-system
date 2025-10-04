@@ -24,7 +24,7 @@ func DSN() string {
 	return v
 }
 
-// HTTPPort returns the server port from environment (default 8082)
+// HTTPPort returns the server port from environment (default 8080)
 func HTTPPort() string {
 	v := os.Getenv("PORT")
 	if v == "" {
