@@ -118,6 +118,21 @@ Pre-seeded tasks for demonstration:
 4. Pay bills
 5. Grocery shopping
 
+💻 Demo / Console Output
+
+Example of scheduler logs and audit entries:
+
+2025-10-04T12:12:27+05:30 [INFO] [scheduler] run pass
+2025-10-04T12:12:27+05:30 [INFO] IntervalReminder(rule:every 2 min) -> Task:7 Submit assignment (past due: 2025-10-03T22:39:37+05:30)
+2025-10-04T12:12:27+05:30 [INFO] IntervalReminder(rule:every 2 min) -> Task:8 Daily workout (past due: 2025-10-03T23:22:00+05:30)
+
+Audit Log:
+- 2025-10-04 12:12:27 — [reminder.trigger] {"rule_id":1,"rule_name":"every 2 min","task_id":7,"task_title":"Submit assignment"}
+- 2025-10-04 12:12:27 — [reminder.trigger] {"rule_id":1,"rule_name":"every 2 min","task_id":8,"task_title":"Daily workout"}
+- 2025-10-04 12:10:00 — [rule.create] New rule "every 2 min" created
+
+✅ The console output shows reminders for tasks and their respective audit log entries.
+
 🔧 Usage
 
 Load tasks via /tasks endpoint or UI.
