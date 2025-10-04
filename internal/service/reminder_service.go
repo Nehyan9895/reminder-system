@@ -82,7 +82,7 @@ func (s *ReminderService) applyBeforeDue(rr *models.ReminderRule) {
 			continue
 		}
 
-		msg := fmt.Sprintf("Reminder(rule:%s) -> Task:%d %s due:%s", rr.Name, t.ID, t.Title, t.DueAt.Format(time.RFC3339))
+		msg := fmt.Sprintf("Reminder(rule:%s) -> Task:%d %s due:%s", rr.Name, t.ID, t.Title, t.DueAt.Format("02 Jan 2006 15:04"))
 		log.Info(msg)
 
 		details := fmt.Sprintf(
@@ -120,7 +120,7 @@ func (s *ReminderService) applyInterval(rr *models.ReminderRule) {
 		// If never reminded OR enough time has passed
 		if lastExec == nil || now.Sub(*lastExec) >= time.Duration(p.IntervalMin)*time.Minute {
 			msg := fmt.Sprintf("IntervalReminder(rule:%s) -> Task:%d %s (past due: %s)",
-				rr.Name, t.ID, t.Title, t.DueAt.Format(time.RFC3339))
+				rr.Name, t.ID, t.Title, t.DueAt.Format("02 Jan 2006 15:04"))
 			log.Info(msg)
 
 			details := fmt.Sprintf(
@@ -155,7 +155,7 @@ func (s *ReminderService) applyAtDue(rr *models.ReminderRule) {
 		}
 
 		if now.Equal(t.DueAt) || now.After(t.DueAt) {
-			msg := fmt.Sprintf("AtDueReminder(rule:%s) -> Task:%d %s due:%s", rr.Name, t.ID, t.Title, t.DueAt.Format(time.RFC3339))
+			msg := fmt.Sprintf("AtDueReminder(rule:%s) -> Task:%d %s due:%s", rr.Name, t.ID, t.Title, t.DueAt.Format("02 Jan 2006 15:04"))
 			log.Info(msg)
 
 			details := fmt.Sprintf(
